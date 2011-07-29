@@ -46,10 +46,11 @@ class WallPostsFrame(wx.Frame):
 
     """основное окно программы"""
     def _init_ctrls(self, prnt):
-        wx.Frame.__init__(self, id=wx.NewId(), name=u'GroupNewsReader', parent=prnt,
-              pos=wx.Point(516, 141), size=wx.Size(290, 400),
-              style=wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.CLIP_CHILDREN)
+        wx.Frame.__init__(self, id=wx.NewId(), name=u'GroupNewsReader',
+            title=u'VkontakteGroupReader', parent=prnt, pos=wx.Point(516, 141), size=wx.Size(290, 400),
+            style=wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.CLIP_CHILDREN)
         self.Center(wx.BOTH)
+        self.SetBackgroundColour('#FFFFFF')
 
         self.scrolledWindow1 = wx.ScrolledWindow(id=wx.ID_ANY,
               name='scrolledWindow1', parent=self, pos=wx.Point(0, 0),
