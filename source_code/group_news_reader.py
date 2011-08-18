@@ -44,14 +44,18 @@ class VkontakteGroupNewsReader(object):
 
     @staticmethod
     def parse_response(data):
+        """ Возвращает экземпляр GroupWall, или None, если стену распарсить
+            по каким-либо причинам не получается. 
+        """
         wall_posts = GroupWall()
-
         html = lxml.html.parse( data ).getroot()
 
         cleaner = Cleaner( style=True, page_structure=False)
         cleaned_html = cleaner.clean_html( html )
 
         page_wall_posts = cleaned_html.get_element_by_id("page_wall_posts", None)
+        if not page_wall_posts:
+            return None
         if len(page_wall_posts):
             #для каждого поста
             for post_element in page_wall_posts.cssselect(".post.all"):
