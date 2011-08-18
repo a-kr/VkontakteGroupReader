@@ -3,12 +3,13 @@ import os
 
 from group_news_reader import VkontakteGroupNewsReader
 import time
+import login
 
 __author__ = 'Tural'
 
 def get_online_tests():
     try:
-        vk = VkontakteGroupNewsReader( 'madcat1991@gmail.com', 'TGPo2602', 'http://vkontakte.ru/iu713' )
+        vk = VkontakteGroupNewsReader( login.login, login.password, login.group_url )
         for i in range(2):
             vk.get_posts()
             time.sleep(120)
