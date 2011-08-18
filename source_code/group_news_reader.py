@@ -55,7 +55,28 @@ class VkontakteGroupNewsReader(object):
 
         page_wall_posts = cleaned_html.get_element_by_id("page_wall_posts", None)
         if not page_wall_posts:
+            # crazy code to authenticate ourselves
+            params = urllib.urlencode({
+                'act': 'security_check', 
+                'al': 1,
+                'al_page': '',
+                'code': login.phone_digits,
+                'hash': '9605d0ffbaa08c8778', # TODO: по-хорошему его надо извлечь из страницы
+            })
+            request = urllib2.Request('http://vkontakte.ru/login.php')
+            # накидаем хедеров для пущей важности...
+            request.add_header("Content-type", "application/x-www-form-urlencoded")
+            request.add_header("Accept", "*/*")
+            request.add_header("Accept-Charset", "windows-1251,utf-8;q=0.7,*;q=0.3")
+            request.add_header("Accept-Encoding", "gzip,deflate,sdch")
+            request.add_header("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4")
+            request.add_header("Origin", "http://vkontakte.ru")
+            request.add_header("User-Agent", "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1")
+            request.add_header("X-Requested-With", "XMLHttpRequest")
+            
+            f = urllib2.urlopen(request, data=params)
             return None
+            
         if len(page_wall_posts):
             #для каждого поста
             for post_element in page_wall_posts.cssselect(".post.all"):
@@ -83,9 +104,9 @@ class VkontakteGroupNewsReader(object):
                 #поиск кнопки с доп раскрывающимся списком комментов
                 has_more_comments = replies.cssselect( 'div.wrh_text' )
                 if has_more_comments:
-                    print post_id, has_more_comments[0].text_content()
+                    #print post_id, has_more_comments[0].text_content()
                     additional_request = r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + post_id
-                    print additional_request
+                    #print additional_request
 
                 for reply_element in replies.cssselect('div.reply.clear'):
                     reply_id = reply_element.attrib["id"].replace('post-','')
