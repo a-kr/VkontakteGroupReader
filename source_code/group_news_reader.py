@@ -75,6 +75,14 @@ class VkontakteGroupNewsReader(object):
                 wall_posts.add_new_post( post_info )
 
                 replies = post_table.cssselect('div.replies_wrap')[0]
+
+                #поиск кнопки с доп раскрывающимся списком комментов
+                has_more_comments = replies.cssselect( 'div.wrh_text' )
+                if has_more_comments:
+                    print post_id, has_more_comments[0].text_content()
+                    additional_request = r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + post_id
+                    print additional_request
+
                 for reply_element in replies.cssselect('div.reply.clear'):
                     reply_id = reply_element.attrib["id"].replace('post-','')
                     reply_table = reply_element.cssselect('table.reply_table')[0]
