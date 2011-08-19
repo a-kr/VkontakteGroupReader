@@ -3,10 +3,12 @@ __author__ = 'Tural'
 
 import sys, wx
 from group_news_reader import VkontakteGroupNewsReader
-import time
-import threading
 from topic_panel import TopicPanel
 import login
+import urllib2
+from lxml.html.clean import Cleaner
+import lxml
+from post import PostAuthor, CommentPostInfo
 
 class StatusTaskBarIcon(wx.TaskBarIcon):
     """меню в системном трее"""
@@ -78,11 +80,50 @@ class WallPostsFrame(wx.Frame):
             tp = TopicPanel(self.scrolledWindow1, "post_" + post_id, False, post_id, post.author.name, post.date,
                 post.text, post.author.image_url, None, post.is_new)
             self.bsSizer.Add(tp, flag=wx.ALIGN_LEFT)
+
+            #кнопка с дополнительными комментами, если такая имеется
+            if post.hide_replies_info is not None:
+                btnShowHiden = wx.Button(id=wx.ID_ANY, label=post.hide_replies_info,
+                    name="btn_" + post_id, parent=self.scrolledWindow1, style=0)
+                btnShowHiden.Bind(wx.EVT_BUTTON, self.OnShowHidenButton, id=btnShowHiden.Id)
+                self.bsSizer.Add( btnShowHiden )
+
             for reply_id, reply in post.replies.iteritems():
                 tp_r = TopicPanel(self.scrolledWindow1, "reply_" + reply_id, True, reply_id, reply.author.name, reply.date,
                     reply.text, reply.author.image_url, post_id, reply.is_new)
                 self.bsSizer.Add(tp_r, flag=wx.LEFT, border=10)
         self.scrolledWindow1.Layout()
+
+    def OnShowHidenButton(self, event):
+        post_id = event.EventObject.Name.replace('btn_', '')
+        post = self.vk.current_wall_posts.posts[post_id]
+        data = urllib2.urlopen(post.get_hide_comments_url())
+        html = lxml.html.parse( data ).getroot()
+
+        cleaner = Cleaner( style=True, page_structure=False)
+        cleaned_html = cleaner.clean_html( html )
+
+        hiden_comments = list()
+        for reply_element in cleaned_html.cssselect('div.reply.clear'):
+            reply_id = reply_element.attrib["id"].replace('post-','')
+            reply_table = reply_element.cssselect('table.reply_table')[0]
+
+            reply_author_img_url = reply_table.cssselect('tr td.image img')[0].attrib['src']
+            reply_author_name = reply_table.cssselect('tr td.info a.author')[0].text_content()
+            reply_author = PostAuthor( reply_author_name, reply_author_img_url )
+
+            reply_date = reply_table.cssselect('tr td.info a.wd_lnk')[0].text_content()
+            reply_text_elem = reply_table.cssselect('tr td.info div.wall_reply_text')[0]
+            if reply_text_elem.cssselect('span'):
+                reply_text = reply_text_elem.cssselect('span')[1].text_content()
+            else:
+                reply_text = reply_text_elem.text_content()
+
+            comment_info = CommentPostInfo( reply_id, reply_author, reply_date, reply_text )
+            hiden_comments.append( comment_info )
+        post.prepend_list_of_replies( hiden_comments )
+        post.hide_replies_info = None
+        self.draw_topics()
 
     def refresh_posts(self, event=None):
         self.vk.get_posts()

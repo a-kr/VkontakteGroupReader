@@ -41,7 +41,14 @@ class PostInfo(CommentPostInfo):
     """Информация о посте"""
     def __init__(self, id, author, date, text):
         CommentPostInfo.__init__( self, id, author, date, text )
-        self.replies = SortedDict() #посты - ответы на пост
+        self.replies = SortedDict() #комменты - ответы на пост
+        #информация о кол-ве скрытых комментов
+        self.hide_replies_info = None
+
+    def get_hide_comments_url(self):
+        if self.hide_replies_info:
+            return r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + self.id
+        return None
 
     def get_is_new(self):
         return self._is_new
@@ -66,3 +73,8 @@ class PostInfo(CommentPostInfo):
             comment - CommentPostInfo комментария
         """
         self.replies[comment.id] = comment
+
+    def prepend_list_of_replies(self, comments_list):
+        comments_list.reverse()
+        for reply in comments_list:
+            self.replies.insert( 0, reply.id, reply)

@@ -52,7 +52,7 @@ class VkontakteGroupNewsReader(object):
         cleaned_html = cleaner.clean_html( html )
 
         page_wall_posts = cleaned_html.get_element_by_id("page_wall_posts", None)
-        if len(page_wall_posts):
+        if page_wall_posts is not None:
             #для каждого поста
             for post_element in page_wall_posts.cssselect(".post.all"):
                 #получаем информацию о идентификаторе, авторе, дате создания, содержимом поста
@@ -79,9 +79,7 @@ class VkontakteGroupNewsReader(object):
                 #поиск кнопки с доп раскрывающимся списком комментов
                 has_more_comments = replies.cssselect( 'div.wrh_text' )
                 if has_more_comments:
-                    print post_id, has_more_comments[0].text_content()
-                    additional_request = r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + post_id
-                    print additional_request
+                    post_info.hide_replies_info = has_more_comments[0].text_content()
 
                 for reply_element in replies.cssselect('div.reply.clear'):
                     reply_id = reply_element.attrib["id"].replace('post-','')
@@ -97,7 +95,6 @@ class VkontakteGroupNewsReader(object):
                         reply_text = reply_text_elem.cssselect('span')[1].text_content()
                     else:
                         reply_text = reply_text_elem.text_content()
-                    pass
 
                     comment_info = CommentPostInfo( reply_id, reply_author, reply_date, reply_text )
                     post_info.add_reply( comment_info )
