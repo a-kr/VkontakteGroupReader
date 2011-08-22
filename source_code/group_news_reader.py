@@ -100,6 +100,7 @@ class VkontakteGroupNewsReader(object):
 
     @staticmethod
     def get_reply_from_response_part(reply_html_element):
+        """ Возвращает CommentPostInfo """
         reply_id = reply_html_element.attrib["id"].replace('post-','')
         reply_table = reply_html_element.cssselect('table.reply_table')[0]
 
@@ -117,6 +118,20 @@ class VkontakteGroupNewsReader(object):
         comment_info = CommentPostInfo( reply_id, reply_author, reply_date, reply_text )
         return comment_info
         
+    @staticmethod
+    def get_hidden_comments(hidden_comments_url):
+        """ Загружает скрытые комментарии и возвращает список объектов CommentPostInfo """
+        data = urllib2.urlopen(hidden_comments_url).read().decode('cp1251')
+        #возвращает элемент, а не дерево
+        html = lxml.html.document_fromstring( data )
+        cleaner = Cleaner( style=True, page_structure=False )
+        cleaned_html = cleaner.clean_html( html )
+        hidden_comments = list()
+        for reply_element in cleaned_html.cssselect('div.reply.clear'):
+            hidden_comments.append( VkontakteGroupNewsReader.get_reply_from_response_part( reply_element ) )
+        return hidden_comments
+        
+    @staticmethod
     def authenticate_with_phone_digits(html_fileobj_with_form):
         """ Нам выдали форму ввода четырех цифр телефона.
             Надо ее заполнить.

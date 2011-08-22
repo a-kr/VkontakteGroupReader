@@ -105,15 +105,9 @@ class WallPostsFrame(wx.Frame):
         #показываем или скрываем дополнительные комментарии
         if not post.hidden_replies_has_shown:
             post.hidden_replies_has_shown = True
-
-            data = urllib2.urlopen(post.get_hide_comments_url()).read().decode('cp1251')
-            #возвращает элемент, а не дерево
-            html = lxml.html.document_fromstring( data )
-            cleaner = Cleaner( style=True, page_structure=False )
-            cleaned_html = cleaner.clean_html( html )
-            hidden_comments = list()
-            for reply_element in cleaned_html.cssselect('div.reply.clear'):
-                hidden_comments.append( VkontakteGroupNewsReader.get_reply_from_response_part( reply_element ) )
+            
+            hidden_comments = VkontakteGroupNewsReader.get_hidden_comments(post.get_hide_comments_url())
+            
             post.prepend_list_of_replies( hidden_comments )
         else:
             post.hidden_replies_has_shown = False

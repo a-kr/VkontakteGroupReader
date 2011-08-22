@@ -48,8 +48,12 @@ class PostInfo(CommentPostInfo):
 
     def get_hide_comments_url(self):
         if self.hidden_replies_info:
-            return r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + self.id
+            return PostInfo.hidden_comments_url(self.id)
         return None
+        
+    @staticmethod
+    def hidden_comments_url(post_id):
+        return r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + post_id
 
     def get_is_new(self):
         return self._is_new
