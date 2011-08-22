@@ -41,7 +41,15 @@ class PostInfo(CommentPostInfo):
     """Информация о посте"""
     def __init__(self, id, author, date, text):
         CommentPostInfo.__init__( self, id, author, date, text )
-        self.replies = SortedDict() #посты - ответы на пост
+        self.replies = SortedDict() #комменты - ответы на пост
+        #информация о кол-ве скрытых комментов
+        self.hidden_replies_info = None
+        self.hidden_replies_has_shown = False
+
+    def get_hide_comments_url(self):
+        if self.hidden_replies_info:
+            return r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + self.id
+        return None
 
     def get_is_new(self):
         return self._is_new
@@ -66,3 +74,14 @@ class PostInfo(CommentPostInfo):
             comment - CommentPostInfo комментария
         """
         self.replies[comment.id] = comment
+
+    def prepend_list_of_replies(self, comments_list):
+        comments_list.reverse()
+        for reply in comments_list:
+            self.replies.insert( 0, reply.id, reply)
+
+    def remove_all_hidden_replies(self):
+        """Удаляет все скрыте комменты, т.е в случае если комментарием больше, чем 3,
+         удаляются все комменты, кроме последних трех"""
+        while len(self.replies) > 3:
+            self.replies.pop(self.replies.keys()[0])

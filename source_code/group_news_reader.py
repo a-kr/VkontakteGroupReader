@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import urllib2
-import urllib
 
 __author__ = 'Tural'
 
@@ -54,78 +52,94 @@ class VkontakteGroupNewsReader(object):
         cleaned_html = cleaner.clean_html( html )
 
         page_wall_posts = cleaned_html.get_element_by_id("page_wall_posts", None)
+        
         if not page_wall_posts:
-            # crazy code to authenticate ourselves
-            params = urllib.urlencode({
-                'act': 'security_check', 
-                'al': 1,
-                'al_page': '',
-                'code': login.phone_digits,
-                'hash': '9605d0ffbaa08c8778', # TODO: по-хорошему его надо извлечь из страницы
-            })
-            request = urllib2.Request('http://vkontakte.ru/login.php')
-            # накидаем хедеров для пущей важности...
-            request.add_header("Content-type", "application/x-www-form-urlencoded")
-            request.add_header("Accept", "*/*")
-            request.add_header("Accept-Charset", "windows-1251,utf-8;q=0.7,*;q=0.3")
-            request.add_header("Accept-Encoding", "gzip,deflate,sdch")
-            request.add_header("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4")
-            request.add_header("Origin", "http://vkontakte.ru")
-            request.add_header("User-Agent", "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1")
-            request.add_header("X-Requested-With", "XMLHttpRequest")
-            
-            f = urllib2.urlopen(request, data=params)
+            VkontakteGroupNewsReader.authenticate_with_phone_digits(data)
             return None
             
-        if len(page_wall_posts):
-            #для каждого поста
-            for post_element in page_wall_posts.cssselect(".post.all"):
-                #получаем информацию о идентификаторе, авторе, дате создания, содержимом поста
-                #и комментариев к нему
-                post_id = post_element.attrib["id"].replace('post-','')
-                post_table = post_element.cssselect('table.post_table')[0]
+        #для каждого поста
+        for post_element in page_wall_posts.cssselect(".post.all"):
+            #получаем информацию о идентификаторе, авторе, дате создания, содержимом поста
+            #и комментариев к нему
+            post_info = VkontakteGroupNewsReader.get_post_from_response_part( post_element )
+            wall_posts.add_new_post( post_info )
+            post_table = post_element.cssselect('table.post_table')[0]
+            replies = post_table.cssselect('div.replies_wrap')[0]
 
-                post_author_img_url = post_table.cssselect('tr td.image img')[0].attrib['src']
-                post_author_name = post_table.cssselect('tr td.info a.author')[0].text_content()
-                post_author = PostAuthor( post_author_name, post_author_img_url )
-
-                post_date = post_table.cssselect('tr td.info span.rel_date')[0].text_content()
-                post_text_elem = post_table.cssselect('tr td.info div.wall_post_text')[0]
-                if post_text_elem.cssselect('span'):
-                    post_text = post_text_elem.cssselect('span')[1].text_content()
-                else:
-                    post_text = post_text_elem.text_content()
-
-                post_info = PostInfo( post_id, post_author, post_date, post_text )
-                wall_posts.add_new_post( post_info )
-
-                replies = post_table.cssselect('div.replies_wrap')[0]
-
-                #поиск кнопки с доп раскрывающимся списком комментов
-                has_more_comments = replies.cssselect( 'div.wrh_text' )
-                if has_more_comments:
-                    #print post_id, has_more_comments[0].text_content()
-                    additional_request = r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + post_id
-                    #print additional_request
-
-                for reply_element in replies.cssselect('div.reply.clear'):
-                    reply_id = reply_element.attrib["id"].replace('post-','')
-                    reply_table = reply_element.cssselect('table.reply_table')[0]
-
-                    reply_author_img_url = reply_table.cssselect('tr td.image img')[0].attrib['src']
-                    reply_author_name = reply_table.cssselect('tr td.info a.author')[0].text_content()
-                    reply_author = PostAuthor( reply_author_name, reply_author_img_url )
-
-                    reply_date = reply_table.cssselect('tr td.info a.wd_lnk')[0].text_content()
-                    reply_text_elem = reply_table.cssselect('tr td.info div.wall_reply_text')[0]
-                    if reply_text_elem.cssselect('span'):
-                        reply_text = reply_text_elem.cssselect('span')[1].text_content()
-                    else:
-                        reply_text = reply_text_elem.text_content()
-                    pass
-
-                    comment_info = CommentPostInfo( reply_id, reply_author, reply_date, reply_text )
-                    post_info.add_reply( comment_info )
-        else:
-            raise Exception( 'В HTML нет элемента с id="page_wall_posts"' )
+            for reply_element in replies.cssselect('div.reply.clear'):
+                post_info.add_reply( VkontakteGroupNewsReader.get_reply_from_response_part( reply_element ) )
         return wall_posts
+
+    @staticmethod
+    def get_post_from_response_part(post_html_element):
+        #получаем информацию о идентификаторе, авторе, дате создания, содержимом поста
+        #и комментариев к нему
+        post_id = post_html_element.attrib["id"].replace('post-','')
+        post_table = post_html_element.cssselect('table.post_table')[0]
+
+        post_author_img_url = post_table.cssselect('tr td.image img')[0].attrib['src']
+        post_author_name = post_table.cssselect('tr td.info a.author')[0].text_content()
+        post_author = PostAuthor( post_author_name, post_author_img_url )
+
+        post_date = post_table.cssselect('tr td.info span.rel_date')[0].text_content()
+        post_text_elem = post_table.cssselect('tr td.info div.wall_post_text')[0]
+        if post_text_elem.cssselect('span'):
+            post_text = post_text_elem.cssselect('span')[1].text_content()
+        else:
+            post_text = post_text_elem.text_content()
+
+        post_info = PostInfo( post_id, post_author, post_date, post_text )
+        replies = post_table.cssselect('div.replies_wrap')[0]
+
+        #поиск кнопки с доп раскрывающимся списком комментов
+        has_more_comments = replies.cssselect( 'div.wrh_text' )
+        if has_more_comments:
+            post_info.hidden_replies_info = has_more_comments[0].text_content()
+
+        return post_info
+
+    @staticmethod
+    def get_reply_from_response_part(reply_html_element):
+        reply_id = reply_html_element.attrib["id"].replace('post-','')
+        reply_table = reply_html_element.cssselect('table.reply_table')[0]
+
+        reply_author_img_url = reply_table.cssselect('tr td.image img')[0].attrib['src']
+        reply_author_name = reply_table.cssselect('tr td.info a.author')[0].text_content()
+        reply_author = PostAuthor( reply_author_name, reply_author_img_url )
+
+        reply_date = reply_table.cssselect('tr td.info a.wd_lnk')[0].text_content()
+        reply_text_elem = reply_table.cssselect('tr td.info div.wall_reply_text')[0]
+        if reply_text_elem.cssselect('span'):
+            reply_text = reply_text_elem.cssselect('span')[1].text_content()
+        else:
+            reply_text = reply_text_elem.text_content()
+
+        comment_info = CommentPostInfo( reply_id, reply_author, reply_date, reply_text )
+        return comment_info
+        
+    def authenticate_with_phone_digits(html_fileobj_with_form):
+        """ Нам выдали форму ввода четырех цифр телефона.
+            Надо ее заполнить.
+            
+            html_fileobj_with_form: файлообразный объект, содержащий HTML с формой 
+        """
+        # crazy code to authenticate ourselves
+        params = urllib.urlencode({
+            'act': 'security_check', 
+            'al': 1,
+            'al_page': '',
+            'code': login.phone_digits,
+            'hash': '9605d0ffbaa08c8778', # TODO: по-хорошему его надо извлечь из страницы
+        })
+        request = urllib2.Request('http://vkontakte.ru/login.php')
+        # накидаем хедеров для пущей важности...
+        request.add_header("Content-type", "application/x-www-form-urlencoded")
+        request.add_header("Accept", "*/*")
+        request.add_header("Accept-Charset", "windows-1251,utf-8;q=0.7,*;q=0.3")
+        request.add_header("Accept-Encoding", "gzip,deflate,sdch")
+        request.add_header("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4")
+        request.add_header("Origin", "http://vkontakte.ru")
+        request.add_header("User-Agent", "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1")
+        request.add_header("X-Requested-With", "XMLHttpRequest")
+        
+        f = urllib2.urlopen(request, data=params)
