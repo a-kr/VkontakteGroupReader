@@ -6,7 +6,7 @@
         body { font-family: tahoma, arial, sans-serif; font-size: 11px; }
         .thread { }
         .post { margin: 5px; }
-        .post_img { float: left; width: 50px; height; 50px; margin: 5px }
+        .post_img_div { float: left; width: 50px; height: 50px; margin: 5px; }
         .post_content, .reply_content { float: left; max-width: 500px; }
         .post_content_author { color: #2B587A; font-weight: bold; }
         .post_content_date, .reply_content_date { color: #999; font-size: 10px; }
@@ -26,7 +26,7 @@
     {% for post in posts.itervalues %}
     <div class="thread">
         <div class="post">
-            <img class="post_img" src="{{ post.author.image_url }}">
+            <div class="post_img_div" style="background-image: url({{ post.author.image_url }});"></div>
             <div class="post_content">
                 <div class="post_content_author">{{ post.author.name }}</div>
                 <div class="post_content_text">{{ post.text }}</div>
