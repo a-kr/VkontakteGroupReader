@@ -34,6 +34,7 @@
             </div>
             <div style="clear: both"></div>
         </div>
+        <div id="comments{{ post.id }}">
         {% if post.hidden_replies_info %}
         <div class="hidden_replies_link" id="hid{{ post.id }}">
             <a href="" onclick="return show_hidden_replies('{{ post.id }}');">
@@ -51,6 +52,7 @@
             <div style="clear: both"></div>
         </div>
         {% endfor %}
+        </div>
     </div>
     {% endfor %}
     {% else %}
@@ -62,7 +64,8 @@
     <script src="/media/jquery-1.4.2.min.js"></script>
     <script>
         var show_hidden_replies = function (post_id) {
-            $('#hid' + post_id).text("Загрузка...").load('hidden_comments/' + post_id);
+            $('#hid' + post_id).text("Загрузка...")
+            $('#comments' + post_id).load('hidden_comments/' + post_id);
             return false;
         }
     </script>
