@@ -3,7 +3,7 @@
     <img class="reply_img" src="{{ reply.author.image_url }}">
     <div class="reply_content">
         <div class="reply_content_author">{{ reply.author.name }}</div>
-        <div class="reply_content_text">{{ reply.text }}</div>
+        <div class="reply_content_text">{{ reply.linebroken_text|safe }}</div>
         <div class="reply_content_date">{{ reply.date }}</div>
     </div>
     <div style="clear: both"></div>

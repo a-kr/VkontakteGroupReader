@@ -22,6 +22,9 @@ class CommentPostInfo(object):
         self.date = date
         self.text = text
         self._is_new = False
+        
+    def linebroken_text(self):
+        return self.text.replace('\n', '<br/>')
 
     def get_is_new(self):
         return self._is_new
@@ -45,6 +48,12 @@ class PostInfo(CommentPostInfo):
         #информация о кол-ве скрытых комментов
         self.hidden_replies_info = None
         self.hidden_replies_has_shown = False
+        
+        # прикрепленные картинки: список кортежей
+        # (thumbnail_url, full_picture_url)
+        self.images = []
+        
+        self.links = [] # список прикрепленных URL
 
     def get_hide_comments_url(self):
         if self.hidden_replies_info:
