@@ -151,9 +151,23 @@ class VkontakteGroupNewsReader(object):
         return comment_info
         
     @staticmethod
-    def get_hidden_comments(hidden_comments_url):
+    def get_hidden_comments(post_id_with_minus):
         """ Загружает скрытые комментарии и возвращает список объектов CommentPostInfo """
-        data = urllib2.urlopen(hidden_comments_url).read().decode('cp1251')
+        params = urllib.urlencode({
+            'act': 'get_replies', 
+            'al': 1,
+            'count': 'false',
+            'post': post_id_with_minus
+        })
+        request = urllib2.Request('http://vkontakte.ru/al_wall.php')
+        request.add_header("X-Requested-With", "XMLHttpRequest")
+        request.add_header("Origin", "http://vkontakte.ru")
+        
+        data = urllib2.urlopen(request).read()
+        
+        with open('b:/1.html', 'w') as f:
+            f.write(data)
+        data = data.decode('cp1251')
         #возвращает элемент, а не дерево
         html = lxml.html.document_fromstring( data )
         cleaner = Cleaner( style=True, page_structure=False )

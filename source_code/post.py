@@ -62,7 +62,7 @@ class PostInfo(CommentPostInfo):
         
     @staticmethod
     def hidden_comments_url(post_id):
-        return r'http://vkontakte.ru/al_wall.php?act=get_replies&al=1&count=false&post=-' + post_id
+        return '-' + post_id
 
     def get_is_new(self):
         return self._is_new
